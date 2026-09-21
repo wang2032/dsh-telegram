@@ -10,15 +10,13 @@
 # credentials from (in precedence order) inherited environment -> .credentials.yaml
 # -> .env. So we simply inject TELEGRAM_BOT_TOKEN as a container env var.
 #
-# The plugin is installed by package name from npm at build time:
-#   dsh plugin --profile web add dsh-telegram
-# Because its package.json declares `dsh.bundle.patch`, it auto-activates as a
-# profile layer. `-w` is required: the profile dir is itself a pnpm workspace
-# root (pnpm-workspace.yaml with `packages: [.]`), so `pnpm add` there needs the
-# explicit --workspace-root flag or it fails with ERR_PNPM_ADDING_TO_ROOT.
-#
-# Build/run (from repo root):
-#   docker compose -f docker/docker-compose.yml up -d --build
+# IMPORTANT — why the plugin is installed at STARTUP, not at build time:
+#   docker-compose mounts a NAMED VOLUME at $DSH_HOME (/dsh-home). A volume
+#   mount hides whatever the image layer wrote at that path, so a profile + bundle
+#   installed during `docker build` would be invisible at runtime. The entrypoint
+#   (entrypoint.sh) therefore installs dsh-telegram by name on the mounted volume
+#   before launching `dsh web`. This guarantees the bundle is present no matter
+#   how the volume is created/reused, and survives container restarts.
 
 FROM node:22-bookworm-slim
 
@@ -32,10 +30,12 @@ RUN npm install -g @deepseek-ai/dsh
 ENV DSH_HOME=/dsh-home
 WORKDIR /dsh-home
 
-# Init the `web` profile and install the published dsh-telegram by name.
-RUN dsh plugin --profile web add dsh-telegram -w
+# Entrypoint installs the plugin on the runtime (mounted) volume, then starts dsh.
+COPY docker/entrypoint.sh /usr/local/bin/teleforge-entrypoint.sh
+RUN chmod +x /usr/local/bin/teleforge-entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/teleforge-entrypoint.sh"]
 
 EXPOSE 3080
 
 # Token is injected at runtime via env (read by DSH credentials domain).
-CMD ["dsh", "web"]
+# `dsh web` extra args can be appended after the image name.
