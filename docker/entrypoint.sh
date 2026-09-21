@@ -27,12 +27,14 @@ rm -rf "$PROFILE_DIR/node_modules"
 # `packages: [.]`), so pnpm add needs the explicit --workspace-root flag.
 dsh plugin --profile web add dsh-telegram -w
 
+# Legacy dsh web (0.1.0-rc.6) crashes when asked to bind a non-loopback host,
+# and its default 127.0.0.1 bind is invisible to docker's published port (which
+# forwards to the container eth0 IP). Solution: a tiny TCP forwarder listens on
+# 0.0.0.0:3081 in-container and pipes to the loopback server on 3080.
+# docker-compose maps host 127.0.0.1:3080 -> container 3081. UI stays reachable
+# only via SSH tunnel:  ssh -L 13080:127.0.0.1:3080 root@<server>
+echo "[teleforge-entrypoint] starting web forwarder (0.0.0.0:3081 -> 127.0.0.1:3080)..."
+node /usr/local/bin/web-forwarder.js &
+
 echo "[teleforge-entrypoint] starting dsh web..."
-# --host 0.0.0.0: by default DSH binds 127.0.0.1 INSIDE the container, but
-# docker's published port forwards to the container's eth0 IP — the default
-# bind makes the published port unreachable (ERR_EMPTY_RESPONSE). 0.0.0.0
-# inside the container is safe because docker-compose publishes the host-side
-# port on 127.0.0.1 only, so external machines cannot reach the UI at all;
-# reach it from your laptop via an SSH tunnel:
-#   ssh -L 13080:127.0.0.1:3080 root@<server>  ->  http://127.0.0.1:13080
-exec dsh web --host 0.0.0.0 "$@"
+exec dsh web "$@"

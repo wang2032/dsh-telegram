@@ -32,10 +32,13 @@ WORKDIR /dsh-home
 
 # Entrypoint installs the plugin on the runtime (mounted) volume, then starts dsh.
 COPY docker/entrypoint.sh /usr/local/bin/teleforge-entrypoint.sh
+COPY docker/web-forwarder.js /usr/local/bin/web-forwarder.js
 RUN chmod +x /usr/local/bin/teleforge-entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/teleforge-entrypoint.sh"]
 
-EXPOSE 3080
+# dsh web itself listens on 3080 INSIDE the container's loopback; the published
+# port is the forwarder's 3081 (see web-forwarder.js).
+EXPOSE 3081
 
 # Token is injected at runtime via env (read by DSH credentials domain).
 # `dsh web` extra args can be appended after the image name.

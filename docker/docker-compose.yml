@@ -39,12 +39,14 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     ports:
-      # 127.0.0.1 on the server host ONLY — the DSH web UI is never exposed to
-      # the public internet. Access from your laptop through an SSH tunnel:
+      # Host-side binds 127.0.0.1 ONLY — the DSH web UI is never exposed to the
+      # public internet. Access from your laptop through an SSH tunnel:
       #   ssh -L 13080:127.0.0.1:3080 root@<server>
       #   browser -> http://127.0.0.1:13080
       # (Telegram needs no inbound ports at all: the plugin long-polls out.)
-      - "127.0.0.1:3080:3080"
+      # Container side is 3081 = the TCP forwarder, which pipes to dsh web's
+      # loopback listener on 3080 (legacy host crashes with --host 0.0.0.0).
+      - "127.0.0.1:3080:3081"
     volumes:
       # Persist the DSH home (profiles, sessions, credentials) across restarts.
       - teleforge-home:/dsh-home
