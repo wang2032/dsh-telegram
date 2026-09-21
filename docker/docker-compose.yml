@@ -1,21 +1,24 @@
 # Teleforge (dsh-telegram) × DeepSeek Harness — docker compose test stack.
 #
-# Deploys the DSH Web UI with the dsh-telegram plugin active, exposes :3080.
-# Telegram webhooks need a PUBLIC HTTPS URL; from this test host either publish
-# 3080 and front it with HTTPS (reverse proxy / self-signed cert + scripts
-# in ./scripts), or point a tunnel (cloudflared/ngrok) at this service.
+# Deploys the DSH Web UI with the dsh-telegram plugin (long-polling mode).
+# The plugin uses getUpdates long-polling, so NO public HTTPS URL or webhook
+# registration is required — the container only needs outbound access to
+# api.telegram.org (verify: curl -s https://api.telegram.org/bot<TOKEN>/getMe).
 #
 # Usage (from this repo root):
-#   export TELEGRAM_BOT_TOKEN='123456:ABC...DEF'     # valid-format token
-#   export TELEGRAM_PUBLIC_URL='https://your-host'   # public base for webhook
+#   export TELEGRAM_BOT_TOKEN='123:ABC...'            # from @BotFather
+#   export DEEPSEEK_API_KEY='sk-...'                  # agent model credentials
 #   docker compose -f docker/docker-compose.yml up -d --build
 #   docker compose -f docker/docker-compose.yml logs -f teleforge
 #
-# Verification (plugin loads + webhook route registers):
-#   docker compose -f docker/docker-compose.yml exec teleforge \
-#     sh -c 'curl -sI -X POST http://127.0.0.1:3080/telegram/webhook | head -1'
-#   # expect HTTP/1.1 403 (route exists; wrong/missing secret) — proves the
-#   # webhook route is registered. See docker/README.md for the full walkthrough.
+# The bot token and LLM keys are read by DSH's credentials domain, whose
+# highest-precedence source is the inherited container environment. Keys can
+# also be set later in the Web UI (Models page) and persist in the volume.
+#
+# Verification (bot is polling):
+#   curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getUpdates"
+#   # expect error_code 409 "terminated by other getUpdates request" — proves
+#   # the container's poller is alive. Then message the bot from your phone.
 
 services:
   teleforge:
@@ -26,17 +29,13 @@ services:
     container_name: teleforge-dsh
     restart: unless-stopped
     environment:
-      # botToken must be valid-format or the plugin idles (webhook not registered).
+      # Bot token (read via DSH credentials domain -> TELEGRAM_BOT_TOKEN env).
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
-      TELEGRAM_WEBHOOK_PATH: ${TELEGRAM_WEBHOOK_PATH:-/telegram/webhook}
-      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
-      TELEGRAM_PUBLIC_URL: ${TELEGRAM_PUBLIC_URL:-}
-      TELEGRAM_ALLOW_USERS: ${TELEGRAM_ALLOW_USERS:-}
-      TELEGRAM_ALLOW_CHATS: ${TELEGRAM_ALLOW_CHATS:-}
-      TELEGRAM_PARSE_MODE: ${TELEGRAM_PARSE_MODE:-None}
-      # Optional LLM route for the web profile (set to a provider/model your DSH deployments use).
-      # DSH_LLM_PROVIDER: ${DSH_LLM_PROVIDER:-}
-      # DSH_LLM_MODEL: ${DSH_LLM_MODEL:-}
+      # LLM provider credentials the agent needs to answer chat messages.
+      # Pass through whichever provider you use; unused ones stay empty.
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     ports:
       - "3080:3080"
     volumes:
