@@ -9,6 +9,9 @@ node_modules/
 *.log
 .env
 .env.*
+# ...but the template is safe and should be committed.
+!.env.example
+!**/.env.example
 # Tool-generated graph indexing (GraphFlow) — not part of the plugin.
 .graphflow/
 graphflow-out/

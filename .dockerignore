@@ -1,0 +1,25 @@
+# Build context for docker/ is the repo root, so this .dockerignore lives here.
+# Keep the image lean and never ship secrets, git history, or local artifacts.
+
+node_modules/
+.git/
+.gitignore
+
+# Secrets — must never enter the image.
+credentials/
+certs/
+*.pem
+.env
+**/.env
+!docker/.env.example
+
+# Local tooling / scratch.
+.graphflow/
+graphflow-out/
+docs/
+tests/
+DESIGN.md
+*.log
+
+# Workspace junk.
+.DS_Store

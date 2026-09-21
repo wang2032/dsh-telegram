@@ -1,0 +1,27 @@
+# Teleforge (dsh-telegram) — Profile Bundle.
+#
+# Activated automatically by `dsh plugin --profile web add <checkout>` because
+# package.json declares `dsh.bundle.patch: ./cordis.patch.yml`. Inserts the
+# host-plane bridge plugin row into the composed tree.
+#
+# Runtime values are read from the environment at composition time (!!js), so no
+# manual overlay is needed. botToken MUST be valid-format (`^\d+:[A-Za-z0-9_-]+$`)
+# or the plugin idles and never registers the webhook.
+- insert:
+    - id: dsh-telegram
+      name: dsh-telegram
+      inject: [webServer, agents, tools]
+      config:
+        botToken: !!js process.env.TELEGRAM_BOT_TOKEN
+        webhookPath: !!js process.env.TELEGRAM_WEBHOOK_PATH || '/telegram/webhook'
+        webhookSecret: !!js process.env.TELEGRAM_WEBHOOK_SECRET || ''
+        publicUrl: !!js process.env.TELEGRAM_PUBLIC_URL || ''
+        allowUsers: !!js (process.env.TELEGRAM_ALLOW_USERS ? process.env.TELEGRAM_ALLOW_USERS.split(',') : [])
+        allowChats: !!js (process.env.TELEGRAM_ALLOW_CHATS ? process.env.TELEGRAM_ALLOW_CHATS.split(',') : [])
+        parseMode: !!js process.env.TELEGRAM_PARSE_MODE || 'None'
+        reply:
+          mode: stream
+          streamChunk: paragraph
+          fallbackToFull: true
+          maxMessageChars: 4096
+          typingIntervalMs: 5000
