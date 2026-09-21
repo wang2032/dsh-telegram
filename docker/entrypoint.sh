@@ -28,4 +28,11 @@ rm -rf "$PROFILE_DIR/node_modules"
 dsh plugin --profile web add dsh-telegram -w
 
 echo "[teleforge-entrypoint] starting dsh web..."
-exec dsh web "$@"
+# --host 0.0.0.0: by default DSH binds 127.0.0.1 INSIDE the container, but
+# docker's published port forwards to the container's eth0 IP — the default
+# bind makes the published port unreachable (ERR_EMPTY_RESPONSE). 0.0.0.0
+# inside the container is safe because docker-compose publishes the host-side
+# port on 127.0.0.1 only, so external machines cannot reach the UI at all;
+# reach it from your laptop via an SSH tunnel:
+#   ssh -L 13080:127.0.0.1:3080 root@<server>  ->  http://127.0.0.1:13080
+exec dsh web --host 0.0.0.0 "$@"
