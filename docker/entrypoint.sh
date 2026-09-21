@@ -4,17 +4,25 @@
 #
 # WHY this runs at startup instead of only at image build: docker-compose
 # mounts a NAMED VOLUME at $DSH_HOME (/dsh-home). A volume mount hides whatever
-# the image layer wrote at that path, so the profile (and the dsh-telegram
-# bundle installed at build time) would be invisible at runtime. Installing the
-# bundle here, on the mounted volume, guarantees it is present no matter how the
-# volume is created/reused.
+# the image layer wrote at that path, so anything installed at build time would
+# be invisible at runtime. Installing the bundle here, on the mounted volume,
+# guarantees it is present no matter how the volume is created/reused.
 #
-# Behaviour: installs dsh-telegram by name (idempotent — `dsh plugin add` on an
-# already-present profile is a no-op), then execs `dsh web`.
+# Self-healing: an old profile may carry a node_modules linked to a DIFFERENT
+# pnpm store (e.g. one left from a build-time install under /root, while the
+# runtime pnpm store lives under $DSH_HOME/.pnpm-store). If pnpm sees that
+# mismatch it refuses with ERR_PNPM_UNEXPECTED_STORE. We therefore drop the
+# profile's installed deps (node_modules store-links) before re-adding, so the
+# bundle is reinstalled cleanly against the current store. The profile's own
+# config files are kept.
 
 set -e
 
+PROFILE_DIR="$DSH_HOME/profiles/web"
 echo "[teleforge-entrypoint] ensuring dsh-telegram is installed in the web profile..."
+echo "[teleforge-entrypoint] clearing stale deps in $PROFILE_DIR (pnpm store self-heal)..."
+rm -rf "$PROFILE_DIR/node_modules"
+
 # -w: the profile dir is itself a pnpm workspace root (pnpm-workspace.yaml with
 # `packages: [.]`), so pnpm add needs the explicit --workspace-root flag.
 dsh plugin --profile web add dsh-telegram -w
