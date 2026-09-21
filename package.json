@@ -1,0 +1,26 @@
+{
+  "name": "dsh-telegram",
+  "version": "0.1.0",
+  "description": "Teleforge — DSH × Telegram bridge plugin. Chat with your DSH agents from your phone in real time (bidirectional: you reply, agent pushes). Host-side plugin package form (mirrors Feishu/WeCom reference plugins).",
+  "private": true,
+  "type": "module",
+  "main": "src/code.host.js",
+  "scripts": {
+    "gen-cert": "bash scripts/gen-cert.sh",
+    "set-webhook": "bash scripts/set-webhook.sh",
+    "webhook-info": "bash scripts/webhook-info.sh"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "cordis",
+    "plugin",
+    "telegram",
+    "bot"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/dsh-tools": "workspace:^",
+    "@deepseek-ai/dsh-llm": "workspace:^"
+  }
+}

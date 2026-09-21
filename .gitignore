@@ -1,0 +1,14 @@
+# Sensitive configuration — never commit.
+credentials/
+*.pem
+*.key
+*.crt
+*.csr
+node_modules/
+.DS_Store
+*.log
+.env
+.env.*
+# Tool-generated graph indexing (GraphFlow) — not part of the plugin.
+.graphflow/
+graphflow-out/
