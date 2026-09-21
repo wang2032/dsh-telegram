@@ -18,6 +18,9 @@
 #   为白名单(填你自己的 Telegram 用户 id;整节删掉 = 所有人可聊)。
 # - 模型 id 必须与 relay 的 /models 列表一致,否则报"无可用渠道"。
 #   本 relay 实测可用:deepseek-v4-flash(思考模型)、qwen3.8-flash、glm-5.3-flash。
+# - `input: [text, image]` 声明多模态能力:不写时 DSH 默认模型只收文本,
+#   Telegram 发图会被拒("pi-ai model ... does not support image input")。
+#   只给真正支持视觉的模型加这行——声明了但 relay 不支持会在上游报错。
 # - 不写 compat:字段,交给 DSH 默认处理;思考过程若不显示不影响回答。
 
 llm-pi-ai:
@@ -36,6 +39,7 @@ llm-pi-ai:
           name: Qwen 3.8 Flash
           contextWindow: 131072
           maxTokens: 8192
+          input: [text, image]
         - id: glm-5.3-flash
           name: GLM 5.3 Flash
           contextWindow: 131072
