@@ -24,7 +24,7 @@ RUN corepack enable && corepack prepare pnpm@9 --activate
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 
 # The dsh launcher (host). pnpm is used by `dsh plugin add`.
-RUN npm install -g @deepseek-ai/dsh
+RUN npm install -g @deepseek-ai/dsh@0.1.0-rc.6
 
 # Working home for DSH profiles (also where credentials/.env would live).
 ENV DSH_HOME=/dsh-home
